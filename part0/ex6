@@ -1,0 +1,14 @@
+sequenceDiagram
+    participant browser
+    participant server
+
+    Note right of browser: When submitting, the new note is added to the internal array
+    browser->>server: POST (application/json) https://studies.cs.helsinki.fi/exampleapp/new_note
+    activate server
+    Note right of browser: {"note": <string>, "date": <utc timestamp>}
+    Note left of server: The note is added to the "database"
+    server-->>browser: Response message JSON
+    deactivate server
+
+    Note left of server: {"message": <string>}
+    Note right of browser: Browser executes the callback function which re-renders all notes<br>including the new one
