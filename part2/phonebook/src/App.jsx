@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useState } from "react";
-import axios from "axios";
+import phonebook from "./services/phonebook";
 
 const Filter = ({ filter, setFilter }) => (
   <>
@@ -35,38 +35,70 @@ const PersonForm = ({ person, setPerson, onSubmit }) => (
   </form>
 );
 
-const Person = ({ name, number }) => (
-  <p>
-    {name} {number}
-  </p>
+const Person = ({ name, number, removePerson }) => (
+  <div>
+    <p>
+      {name} {number}
+    </p>
+    <input type="button" onClick={removePerson} value="delete" />
+  </div>
 );
 
 const App = () => {
   const [persons, setPersons] = useState([]);
-  const [newPerson, setNewPerson] = useState({
-    name: "",
-    number: "",
-    id: 1,
-  });
   const [filter, setFilter] = useState("");
 
+  const initPerson = (id) => ({
+    name: "",
+    number: "",
+    id,
+  });
+
+  const [newPerson, setNewPerson] = useState(initPerson(1));
+
   useEffect(() => {
-    console.log("effect");
-    axios
-      .get("http://localhost:3001/persons")
-      .catch((e) => alert(e))
-      .then((response) => {
-        setPersons(response.data);
-        setNewPerson((n) => {
-          return { ...n, id: Number(response.data.at(-1).id || 1) + 1 };
-        });
-      });
+    phonebook
+      .getAll()
+      .then((people) => {
+        const maxId = people.reduce((best, curr) => Math.max(best, curr.id), 1);
+        setPersons(people);
+        setNewPerson((p) => ({ ...p, id: maxId + 1 }));
+      })
+      .catch((err) => alert("Could not get persons: " + err.message));
   }, []);
 
   const onSubmit = (e) => {
     e.preventDefault();
-    setPersons([...persons, newPerson]);
-    setNewPerson({ name: "", number: "", id: newPerson.id + 1 });
+    const updatedPerson = persons.find((p) => p.name === newPerson.name);
+    if (
+      updatedPerson &&
+      confirm(`Person name ${newPerson.name} already exists, replace number?`)
+    ) {
+      phonebook
+        .update({ ...updatedPerson, number: newPerson.number })
+        .then((updated) => {
+          setPersons(persons.map((p) => (p.id === updated.id ? updated : p)));
+          setNewPerson(initPerson(newPerson.id));
+        })
+        .catch((err) => alert("Could not update person: " + err.message));
+      return;
+    }
+    phonebook.add(newPerson).then((added) => {
+      setPersons(persons.concat(added));
+      setNewPerson(initPerson(added.id + 1));
+    });
+  };
+
+  const removePerson = (person) => {
+    if (!confirm(`Remove ${person.name}?`)) {
+      return;
+    }
+    phonebook
+      .remove(person.id)
+      .then(() => {
+        setPersons(persons.filter((p) => p.id !== person.id));
+      })
+      .catch((err) => alert("Could not remove person: " + err.message));
   };
 
   return (
@@ -83,7 +115,7 @@ const App = () => {
       {persons
         .filter((p) => p.name.includes(filter))
         .map((p) => (
-          <Person {...p} key={p.id} />
+          <Person {...p} removePerson={() => removePerson(p)} key={p.id} />
         ))}
     </div>
   );
