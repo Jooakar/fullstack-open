@@ -1,4 +1,5 @@
 import express from "express";
+import morgan from "morgan";
 
 let persons = [
   {
@@ -25,6 +26,12 @@ let persons = [
 
 const app = express();
 app.use(express.json());
+morgan.token("json", (req, _) => (req.body ? JSON.stringify(req.body) : ""));
+app.use(
+  morgan(
+    '[:date[iso]] ":method :url HTTP/:http-version" :status :response-time ms :json',
+  ),
+);
 
 const generateId = () => {
   return Math.floor(Math.random() * 1e9);
