@@ -1,6 +1,18 @@
 import { useEffect } from "react";
 import { useState } from "react";
 import phonebook from "./services/phonebook";
+import "./index.css";
+
+const Message = ({ content, type }) => {
+  if (content === "") {
+    return null;
+  }
+  return (
+    <>
+      <p className={"message " + type}>{content}</p>
+    </>
+  );
+};
 
 const Filter = ({ filter, setFilter }) => (
   <>
@@ -47,14 +59,20 @@ const Person = ({ name, number, removePerson }) => (
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [filter, setFilter] = useState("");
+  const [message, setMessage] = useState({ content: "", type: "success" });
 
   const initPerson = (id) => ({
     name: "",
     number: "",
-    id,
+    id: String(id),
   });
 
   const [newPerson, setNewPerson] = useState(initPerson(1));
+
+  const createMessage = (msg, type) => {
+    setMessage({ type: type, content: msg });
+    setTimeout(() => setMessage({ type: type, content: "" }), 5000);
+  };
 
   useEffect(() => {
     phonebook
@@ -62,7 +80,7 @@ const App = () => {
       .then((people) => {
         const maxId = people.reduce((best, curr) => Math.max(best, curr.id), 1);
         setPersons(people);
-        setNewPerson((p) => ({ ...p, id: maxId + 1 }));
+        setNewPerson((p) => ({ ...p, id: String(maxId + 1) }));
       })
       .catch((err) => alert("Could not get persons: " + err.message));
   }, []);
@@ -79,14 +97,23 @@ const App = () => {
         .then((updated) => {
           setPersons(persons.map((p) => (p.id === updated.id ? updated : p)));
           setNewPerson(initPerson(newPerson.id));
+          createMessage(`Successfully updated ${updated.name}`, "success");
         })
-        .catch((err) => alert("Could not update person: " + err.message));
+        .catch((err) =>
+          createMessage("Could not update person: " + err.message, "error"),
+        );
       return;
     }
-    phonebook.add(newPerson).then((added) => {
-      setPersons(persons.concat(added));
-      setNewPerson(initPerson(added.id + 1));
-    });
+    phonebook
+      .add(newPerson)
+      .then((added) => {
+        setPersons(persons.concat(added));
+        setNewPerson(initPerson(added.id + 1));
+        createMessage(`Successfully added ${added.name}`, "success");
+      })
+      .catch((err) =>
+        createMessage("Could not add person: " + err.message, "error"),
+      );
   };
 
   const removePerson = (person) => {
@@ -97,12 +124,16 @@ const App = () => {
       .remove(person.id)
       .then(() => {
         setPersons(persons.filter((p) => p.id !== person.id));
+        createMessage(`Successfully deleted ${person.name}`, "success");
       })
-      .catch((err) => alert("Could not remove person: " + err.message));
+      .catch((err) =>
+        createMessage("Could not remove person: " + err.message, "error"),
+      );
   };
 
   return (
     <div>
+      <Message {...message} />
       <h2>Filter</h2>
       <Filter filter={filter} setFilter={setFilter} />
       <h2>Phonebook</h2>
