@@ -34,6 +34,7 @@ app.use(
   ),
 );
 app.use(cors());
+app.use(express.static("dist"));
 
 const generateId = () => {
   return Math.floor(Math.random() * 1e9);
