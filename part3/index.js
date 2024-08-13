@@ -1,5 +1,6 @@
 import express from "express";
 import morgan from "morgan";
+import cors from "cors";
 
 let persons = [
   {
@@ -32,6 +33,7 @@ app.use(
     '[:date[iso]] ":method :url HTTP/:http-version" :status :response-time ms :json',
   ),
 );
+app.use(cors());
 
 const generateId = () => {
   return Math.floor(Math.random() * 1e9);
@@ -90,7 +92,7 @@ app.delete("/api/persons/:id", (request, response) => {
   response.status(204).end();
 });
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
