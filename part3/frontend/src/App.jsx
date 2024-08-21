@@ -21,7 +21,7 @@ const App = () => {
     phonebook
       .getAll()
       .then(setPersons)
-      .catch((err) => alert("Could not get persons: " + err.message));
+      .catch((err) => alert("Could not get persons: " + err.response.data.error));
   }, []);
 
   const onSubmit = (e) => {
@@ -39,9 +39,10 @@ const App = () => {
           setNewPerson({ name: "", number: "" });
           createMessage(`Successfully updated ${updated.name}`, "success");
         })
-        .catch((err) =>
-          createMessage("Could not update person: " + err.message, "error"),
-        );
+        .catch((err) => {
+          console.log(err);
+          createMessage("Could not update person: " + err.response.data.error, "error");
+        });
     } else {
       phonebook
         .add(newPerson)
@@ -50,9 +51,10 @@ const App = () => {
           setNewPerson({ name: "", number: "" });
           createMessage(`Successfully added ${added.name}`, "success");
         })
-        .catch((err) =>
-          createMessage("Could not add person: " + err.message, "error"),
-        );
+        .catch((err) => {
+          console.log(err);
+          createMessage("Could not add person: " + err.response.data.error, "error");
+        });
     }
   };
 
@@ -66,9 +68,9 @@ const App = () => {
         setPersons(persons.filter((p) => p.id !== person.id));
         createMessage(`Successfully deleted ${person.name}`, "success");
       })
-      .catch((err) =>
-        createMessage("Could not remove person: " + err.message, "error"),
-      );
+      .catch((err) => {
+        createMessage("Could not remove person: " + err.response.data.error, "error");
+      });
   };
 
   return (
